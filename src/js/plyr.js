@@ -774,6 +774,18 @@ class Plyr {
     return this.media.quality;
   }
 
+  setCustomValue = (settingType, input) => {
+    const config = this.config[settingType];
+    if (!config) {
+      return;
+    }
+    let value = input
+    if (is.empty(value)) {
+      value = { value: config.default }
+    }
+    this.media[settingType] = value;
+  };
+
   /**
    * Toggle loop
    * TODO: Finish fancy new logic. Set the indicator on load as user may pass loop as config
@@ -882,7 +894,7 @@ class Plyr {
       return;
     }
 
-    ui.setPoster.call(this, input, false).catch(() => {});
+    ui.setPoster.call(this, input, false).catch(() => { });
   }
 
   /**

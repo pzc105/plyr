@@ -145,6 +145,7 @@ const defaults = {
     'fullscreen',
   ],
   settings: ['captions', 'quality', 'speed'],
+  customSettings: [],
 
   // Localisation
   i18n: {

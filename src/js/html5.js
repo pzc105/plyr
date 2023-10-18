@@ -52,6 +52,22 @@ const html5 = {
 
     // Set speed options from config
     player.options.speed = player.config.speed.options;
+    this.config.customSettings.forEach((type) => {
+      Object.defineProperty(player.media, type, {
+        get() {
+        },
+        set(obj) {
+          if (player.config[type] && is.function(player.config[type].onChange)) {
+            player.config[type].onChange(obj.value)
+          }
+
+          triggerEvent.call(player, player.media, 'customchange', false, {
+            type,
+            value: obj.value,
+          });
+        }
+      })
+    });
 
     // Set aspect ratio if fixed
     if (!is.empty(this.config.ratio)) {

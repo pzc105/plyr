@@ -528,6 +528,14 @@ const controls = {
             break;
 
           default:
+            let label = i18n.get(`customItemLabel.${type}.${value}`, this.config)
+            let obj = { value }
+            if (!is.empty(label)) {
+              obj[label] = label
+            } else {
+              obj[label] = value
+            }
+            this.setCustomValue(type, obj);
             break;
         }
 
@@ -829,18 +837,15 @@ const controls = {
       value = this.currentTrack;
     } else {
       value = !is.empty(input) ? input : this[setting];
-
       // Get default
       if (is.empty(value)) {
         value = this.config[setting].default;
       }
-
       // Unsupported value
       if (!is.empty(this.options[setting]) && !this.options[setting].includes(value)) {
         this.debug.warn(`Unsupported value of '${value}' for ${setting}`);
         return;
       }
-
       // Disabled value
       if (!this.config[setting].options.includes(value)) {
         this.debug.warn(`Disabled value of '${value}' for ${setting}`);
@@ -852,7 +857,6 @@ const controls = {
     if (!is.element(list)) {
       list = pane && pane.querySelector('[role="menu"]');
     }
-
     // If there's no list it means it's not been rendered...
     if (!is.element(list)) {
       return;
@@ -861,7 +865,6 @@ const controls = {
     // Update the label
     const label = this.elements.settings.buttons[setting].querySelector(`.${this.config.classNames.menu.value}`);
     label.innerHTML = controls.getLabel.call(this, setting, value);
-
     // Find the radio option and check it
     const target = list && list.querySelector(`[value="${value}"]`);
 
@@ -893,7 +896,7 @@ const controls = {
         return captions.getLabel.call(this);
 
       default:
-        return null;
+        return `${value}`;
     }
   },
 
@@ -937,7 +940,6 @@ const controls = {
 
       return controls.createBadge.call(this, label);
     };
-
     // Sort options by the config and then render options
     this.options.quality
       .sort((a, b) => {
@@ -955,6 +957,38 @@ const controls = {
       });
 
     controls.updateSetting.call(this, type, list);
+  },
+
+  setCustom() {
+    this.config.customSettings.forEach((type) => {
+      if (!this.config[type]) {
+        return
+      }
+      const options = this.config[type].options
+      if (!options) {
+        return
+      }
+      const list = this.elements.settings.panels[type].querySelector('[role="menu"]');
+
+      this.options[type] = []
+      if (is.array(options)) {
+        this.options[type] = options
+      }
+      controls.toggleMenuButton.call(this, type, this.options[type].length > 0);
+      this.options[type].forEach((item) => {
+        let label = i18n.get(`customItemLabel.${type}.${item}`, this.config)
+        if (is.empty(label)) {
+          label = `${item}`
+        }
+        controls.createMenuItem.call(this, {
+          value: item,
+          list,
+          type,
+          title: label,
+        });
+      });
+      controls.updateSetting.call(this, type, list);
+    })
   },
 
   // Set the looping options
@@ -1272,6 +1306,7 @@ const controls = {
       createRange,
       createTime,
       setQualityMenu,
+      setCustom,
       setSpeedMenu,
       showMenuPanel,
     } = controls;
@@ -1451,8 +1486,7 @@ const controls = {
         inner.appendChild(home);
         this.elements.settings.panels.home = home;
 
-        // Build the menu items
-        this.config.settings.forEach((type) => {
+        const settingSetup = (type) => {
           // TODO: bundle this with the createMenuItem helper and bindings
           const menuItem = createElement(
             'button',
@@ -1557,7 +1591,11 @@ const controls = {
 
           this.elements.settings.buttons[type] = menuItem;
           this.elements.settings.panels[type] = pane;
-        });
+        };
+
+        // Build the menu items
+        this.config.settings.forEach((type) => settingSetup(type));
+        this.config.customSettings.forEach((type) => settingSetup(type));
 
         popup.appendChild(inner);
         wrapper.appendChild(popup);
@@ -1611,6 +1649,7 @@ const controls = {
     // Set available quality levels
     if (this.isHTML5) {
       setQualityMenu.call(this, html5.getQualityOptions.call(this));
+      setCustom.call(this);
     }
 
     setSpeedMenu.call(this);
